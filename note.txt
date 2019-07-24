@@ -1,0 +1,30 @@
+delta_theta sum(loss_Ti(theta'))
+sum(delta_theta' loss_Ti(theta')*delta_theta(theta'))
+
+delta_theta(theta')中theta'=theta-a*delta L(theta)
+会产生二阶导数，一般忽略二阶项即可，最后更新梯度就变成就变成各task的梯度之和
+
+问题：
+1. 进行负采样时，如何选取：对每个正样本选一个吧
+2. 选取什么模型作为对比
+3. 采用什么数据集
+4. motivation具体如何说
+5. 采样batch_size个task(node)，每个node随机采样K个历史记录？
+只在users的第一层实现选k个样本
+6. 问题设定，比如选80%的用户/物品作为训练集，10%作为验证集，10%作为训练集，验证效果时选取K个交互记录，预测剩余的其他记录
+7. 评测指标，选取NDCG和HR
+即metric如何去写，如果要concat embedding，又要如何写呢
+
+
+
+现在的问题是如何给user,pos_item,neg_item的标号，还给我loss或者embedding
+
+we use the popular gensim tool2
+to learn the embedding of each word with Word2vec model (Mikolov et al.
+2013). Then, we get the feature vector of each user (item)
+by averaging all the learned word vectors of the user(item).
+
+we transform the ratings that are larger than 3 as the liked items by this user
+转换：
+Tensor to numpy: np_data=tensor_data_cuda.cpu().numpy()
+Variable to numpy: np_data=tensor_data_cuda_var.cpu().detach().numpy()
