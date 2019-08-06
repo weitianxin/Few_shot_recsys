@@ -41,7 +41,7 @@ class graphsage(nn.Module):
         pos_items = np.reshape(pos_items,-1)
         neg_items = np.reshape(neg_items,-1)
 
-        pos_item_embedding = self.forward(pos_items,adj_lists,flag=True)
+        pos_item_embedding = self.forward(pos_items,adj_lists)
 
         neg_item_embedding = self.forward(neg_items,adj_lists)
         #batch x k x embed_dim
@@ -52,6 +52,22 @@ class graphsage(nn.Module):
         neg = torch.sum(neg_item_embedding*user_embedding,-1)
         #输入规模为1 x
         loss = -torch.sum(self.transform(pos-neg))/few_shot
+        return loss
+
+    def loss_ctr(self,users,items,labels,adj_lists,few_shot=2):
+        #users:assume a task include several users, now 1 user per task
+        user_embedding = self.forward(users, adj_lists)
+        user_embedding = torch.unsqueeze(user_embedding, 1).repeat([1, 2*few_shot, 1])
+        items = np.reshape(items, -1)
+        item_embedding = self.forward(items, adj_lists)
+        item_embedding = item_embedding.view([-1, 2*few_shot, self.output_dim])
+        pred = torch.sum(item_embedding * user_embedding, -1).view(-1)
+        pred = pred-torch.mean(pred)
+        # print(pred)
+        labels = labels.view(-1).float()
+        sigmoid = nn.Sigmoid()
+        loss = torch.mean(-(labels*torch.log(sigmoid(pred))+(1-labels)*torch.log(1-sigmoid(pred))))
+        # loss = F.binary_cross_entropy_with_logits(pred.float(),labels.float())
         return loss
 
     def forward(self,nodes,adj_lists,flag=False):
@@ -257,9 +273,3 @@ class graphsage(nn.Module):
 #         neg = torch.sum(neg_item_embedding*user_embedding,-1)
 #         loss = -torch.sum(self.transform(pos-neg),-1)
 #         return loss
-
-
-
-
-
-
